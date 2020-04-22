@@ -5,17 +5,17 @@ IN_FILE=$1
 #出力ファイルのフルパス
 OUT_FILE=$2
 #ヘッダ有無
-HEAD_FLAG=$3
+#HEAD_FLAG=$3
 #外部定義(①ファイルレイアウトのパラメータファイル)
-FILE_LAYOUT=$4
+#FILE_LAYOUT=$4
 #外部定義(②ソートキー)
-SORT_FLAG=$5
+#SORT_FLAG=$5
 #外部定義(③除外する項目のパラメータファイル)
-NOJOKI_ITEM=$6
+#NOJOKI_ITEM=$6
 #Pattern file 条件チェック
-LINECNT=0
+#LINECNT=0
 
-if [[ echo $1 | grep -i '.csv']]; then
+if [[ (echo ${IN_FILE} | grep -i '.csv') ]]; then
     echo "OK"
 fi
 
