@@ -12,8 +12,7 @@ SORT_FLAG=$5
 #外部定義(③除外する項目のパラメータファイル)
 NOJOKI_ITEM=$6
 #Pattern file 条件チェック
-ROWCNT=0 
-COLCNT=0 
+
 
 #ファイルポマード
 FILE_TYPE=""
@@ -29,23 +28,65 @@ echo "file type : " ${FILE_TYPE}
 
 CUTDATA=""
 CUTDATA2=""
-
+ROWCNT=0 
 while read line 
 do
   ROWCNT=$(($ROWCNT + 1))
-  if [[ ${ROWCNT} -eq 3 ]]; then
-    for var in {1..3}
+  #比較対象、4番目　２項目から
+  if [[ ${ROWCNT} -eq 4 ]]; then
+    COLCNT=0
+    CUTDATA=''
+    CUTDATA2=''
+    for var in {2..100}
     do 
-        CUTDATA2=$var
-        CUTDATA2="echo $line | cut -f $var -d ','" 
-        $CUTDATA2
-        echo $line | cut -f $var -d ','
-        # CUTDATA=$CUTDATA$CUTDATA2
+        CUTDATA2=$(echo $line | cut -f $var -d ',') 
+        if [[ $CUTDATA2 ]]; then
+            if [[ ${COLCNT} -eq 0 ]]; then
+                CUTDATA2=$var
+            else
+                CUTDATA2=','$var
+            fi
+        fi
+        COLCNT=$(($COLCNT + 1))
+        
+        # CUTDATA2=$line" | cut -f 1 -d','" 
+        # echo $CUTDATA2
+        # echo $line | cut -f $var -d ','
+        CUTDATA=$CUTDATA$CUTDATA2
     done
+    echo '1: '$CUTDATA
+    # CUTDATA2='1,2,3'
+    # echo $line | cut -f  ${CUTDATA2} -d ','
+  fi 
+
+  if [[ ${ROWCNT} -eq 3 ]]; then
+    COLCNT=0
+    CUTDATA=''
+    CUTDATA2=''
+    for var in {2..100}
+    do 
+        CUTDATA2=$(echo $line | cut -f $var -d ',') 
+        if [[ $CUTDATA2 ]]; then
+            if [[ ${COLCNT} -eq 0 ]]; then
+                CUTDATA2=$var
+            else
+                CUTDATA2=','$var
+            fi
+        fi
+        COLCNT=$(($COLCNT + 1))
+        
+        # CUTDATA2=$line" | cut -f 1 -d','" 
+        # echo $CUTDATA2
+        # echo $line | cut -f $var -d ','
+        CUTDATA=$CUTDATA$CUTDATA2
+    done
+    echo '2: '$CUTDATA
+    # CUTDATA2='1,2,3'
+    # echo $line | cut -f  ${CUTDATA2} -d ','
   fi 
 done < ${IN_FILE}
 
-# echo ${CUTDATA}
+
 
 
 # while read line 
