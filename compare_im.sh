@@ -11,9 +11,11 @@ FILE_LAYOUT=$4
 SORT_FLAG=$5
 #外部定義(③除外する項目のパラメータファイル)
 NOJOKI_ITEM=$6
-#Pattern file 条件チェック
-
-
+#項目数
+STR_COL=2
+END_COL=6
+#Pattern file 比較対象項目
+COMPARE_ITEM
 #ファイルポマード
 FILE_TYPE=""
 
@@ -32,45 +34,20 @@ ROWCNT=0
 while read line 
 do
   ROWCNT=$(($ROWCNT + 1))
-  #比較対象、4番目　２項目から
-  if [[ ${ROWCNT} -eq 4 ]]; then
-    COLCNT=0
-    CUTDATA=''
-    CUTDATA2=''
-    for var in {2..100}
-    do 
-        CUTDATA2=$(echo $line | cut -f $var -d ',') 
-        if [[ $CUTDATA2 ]]; then
-            if [[ ${COLCNT} -eq 0 ]]; then
-                CUTDATA2=$var
-            else
-                CUTDATA2=','$var
-            fi
-        fi
-        COLCNT=$(($COLCNT + 1))
-        
-        # CUTDATA2=$line" | cut -f 1 -d','" 
-        # echo $CUTDATA2
-        # echo $line | cut -f $var -d ','
-        CUTDATA=$CUTDATA$CUTDATA2
-    done
-    echo '1: '$CUTDATA
-    # CUTDATA2='1,2,3'
-    # echo $line | cut -f  ${CUTDATA2} -d ','
-  fi 
-
+  #length
   if [[ ${ROWCNT} -eq 3 ]]; then
     COLCNT=0
     CUTDATA=''
     CUTDATA2=''
-    for var in {2..100}
+    MAX_COL=5
+    for (( var=$STR_COL; var<=$END_COL; var++ ))
     do 
         CUTDATA2=$(echo $line | cut -f $var -d ',') 
         if [[ $CUTDATA2 ]]; then
             if [[ ${COLCNT} -eq 0 ]]; then
-                CUTDATA2=$var
+                CUTDATA=$CUTDATA$CUTDATA2
             else
-                CUTDATA2=','$var
+                CUTDATA=$CUTDATA','$CUTDATA2
             fi
         fi
         COLCNT=$(($COLCNT + 1))
@@ -78,9 +55,62 @@ do
         # CUTDATA2=$line" | cut -f 1 -d','" 
         # echo $CUTDATA2
         # echo $line | cut -f $var -d ','
-        CUTDATA=$CUTDATA$CUTDATA2
+
     done
-    echo '2: '$CUTDATA
+    echo 'length: '$CUTDATA
+    # CUTDATA2='1,2,3'
+    # echo $line | cut -f  ${CUTDATA2} -d ','
+  fi 
+  #比較対象、4番目　２項目から
+  if [[ ${ROWCNT} -eq 4 ]]; then
+    COLCNT=1
+    CUTDATA=''
+    CUTDATA2=''
+    for (( var=$STR_COL; var<=$END_COL; var++ ))
+    do 
+        CUTDATA2=$(echo $line | cut -f $var -d ',') 
+        if [[ ${CUTDATA2} ]]; then
+            if [[ $(echo ${CUTDATA2}) -eq 1 ]]; then
+                if [[ ${COLCNT} -eq 1 ]]; then
+                    CUTDATA2=$COLCNT
+                else
+                    CUTDATA2=','$COLCNT
+                fi
+                CUTDATA=$CUTDATA$CUTDATA2
+            fi
+        fi
+        COLCNT=$(($COLCNT + 1))
+
+    done
+    echo '比較対象: '$CUTDATA
+
+    # COLCNT=1
+    # CUTDATA=''
+    # CUTDATA2=''
+    # CUTDATA2=$(echo $line | cut -f 2 -d ',') 
+    # echo ${CUTDATA2}
+    # while true
+    # do
+    # echo ${CUTDATA2}
+    #     CUTDATA2=$(echo $line | cut -f $COLCNT -d ',') 
+    #     if [[ ${CUTDATA2} ]]; then
+    #     echo ${CUTDATA2}
+    #         if [[ $(echo ${CUTDATA2}) -eq 1 ]]; then
+    #             if [[ ${COLCNT} -eq 1 ]]; then
+    #                 CUTDATA2=$COLCNT
+    #             else
+    #                 CUTDATA2=','$COLCNT
+    #             fi
+    #             CUTDATA=$CUTDATA$CUTDATA2
+    #         fi
+    #     else
+    #         break
+    #     fi
+    #     COLCNT=$(($COLCNT + 1))
+    #     CUTDATA2=$(echo $line | cut -f $COLCNT -d ',') 
+    # done
+    # echo '比較対象: '$CUTDATA
+  
     # CUTDATA2='1,2,3'
     # echo $line | cut -f  ${CUTDATA2} -d ','
   fi 
