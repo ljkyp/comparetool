@@ -1,0 +1,4 @@
+項目名,A,B,C,D,E,F,G,H
+Type,Varchar,Varchar,Varchar,Varchar,Varchar,integer,Varchar,integer
+Length,1,10,5,10,8,,5,10
+比較対象,1,1,1,0,1,1,1,1
