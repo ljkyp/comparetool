@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/ㅏsh
 
 # 入力コマンド
 # ksh ./compare_jeon.ksh 新データファイル名 現データファイル名 パターンファイル
