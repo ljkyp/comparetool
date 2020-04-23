@@ -1,0 +1,62 @@
+#!/usr/bin/ksh
+#header flag : 0 = none, 1 = header
+
+#입력받을 변수들
+newfilename = $1
+oldfilename = $2
+patternfile = $3
+headerflg = $4
+
+#패턴파일에 이름, 데이터 형식같은 행은 필요없을듯
+#전처리 - 헤더삭제처리/확장자 구분처리
+#sort는 항상 실행해도 상관없을듯?
+#copy -> 헤더삭제 -> 컬럼삭제 -> sort 처리 -> diff후 출력의 순서?
+
+#확장자
+new_ext = 'echo $newfilename | rev | cut -c 3- | rev'
+old_ext = 'echo $oldfilename | rev | cut -c 3- | rev'
+
+#복사
+cp $newfilename $pathB_new
+cp $oldfilename $pathB_old
+
+#헤더삭제
+if [ headerflg -eq 0 ]; then
+	echo not header file
+elif [ headerflg -eq 1 ]
+	notheader_new = sed @@
+	notheader_old = sed @@
+fi
+
+#데이터 건수 저장
+if [ headerflg -eq 0 ]; then
+	wc_newfile =  'wc pathB_new'
+	wc_oldfile = 'wc pathB_old'
+elif [ headerflg -eq 1 ]
+	notheader_new = 'wc notheader_new' 
+	notheader_old = 'wc notheader_old'
+fi
+
+#컬럼삭제
+#if [ $new_ext -eq 'txt' ]; then
+#	cut -f 1,3,4 -d ',' aaa.txt > test1
+#elif [ $new_ext -eq 'csv' ]; then
+#	cut -c1-3,4-5,6-10  bbb.csv
+#fi
+
+#sort처리
+if [ headerflg -eq 0 ]; then
+	newfilesort = ${pathB_new}_sort.${new_ext}
+	oldfilesort = ${pathB_old}_sort.${old_ext}
+elif [ headerflg -eq 1 ]
+	newfilesort = ${notheader_new}_sort.${new_ext}
+	oldfilesort = ${notheader_old}_sort.${old_ext}
+fi
+
+cat ${newfilename} |sort >> ${newfilesort}
+cat ${oldfilename} |sort >> ${oldfilesort}
+
+#diff처리
+diff -w ${newfilename}_sort.${new_ext} ${oldfilename}_sort.${old_ext} 
+
+
