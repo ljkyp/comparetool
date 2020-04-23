@@ -1,13 +1,7 @@
 #!/bin/ksh
 
-# JeonGB-2:comparetool JeonGB$ ksh ./compare_jeon.ksh ./newdata/datacsv1.csv ./olddata/datacsv1.csv ./patterncsv.csv
-# "a","bbbb","cccc","eeee",3333,"gggg",4444
-# "b","bbbb","cccc","eeee",3333,"gggg",4444
-# "c","bbbb","cccc","eeee",3333,"gggg",4444
-# "d","bbbb","cccc","eeee",3333,"gggg",4444
-# "e","bbbb","cccc","eeee",3333,"gggg",4444
-# "f","bbbb","cccc","eeee",3333,"gggg",4444
-# JeonGB-2:comparetool JeonGB$ 
+# 入力コマンド
+# ksh ./compare_jeon.ksh 新データファイル名 現データファイル名 パターンファイル
 
 # 引数確認
 ###todo### 引数追加される予定
