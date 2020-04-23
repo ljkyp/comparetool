@@ -17,28 +17,28 @@
 
 #파일이름 리스트를 받음?
 #newdatalist=$1
-#olddatalist=$2
+#파라미터 지정
 newdataname=$1
 olddataname=$2
 header_flg=$3
 newdatapath=./newdata/
 olddatapath=./olddata/
-#건 수
+#건 수 지정후 파일
 wc_new='wc_'${newdataname}
 wc_old='wc_'$olddataname
-#sort
+#sort후 파일
 newdatasort=sort_${newdataname}
 olddatasort=sort_${olddataname}
 #컨버전 셀 호출
+
+#리스트로 받을경우 ?
+#for 
 sh ./conversionfile.ksh ${newdatapath} ${newdataname} ${header_flg}
 
 #cp $newdatapath/$newdataname $newdatapath/$wc_new
 #cp $olddatapath/$olddataname $olddatapath/$wc_old
 
 #데이터 건 수 저장
-#wc_newdata='newdatapath/wc wc_new'
-#wc_olddata='olddatapath/wc wc_old'
-
 wc ${newdatapath}/${newdataname} > ${newdatapath}/${wc_new}
 wc ${olddatapath}/${olddataname} > ${olddatapath}/${wc_old}
 
@@ -51,3 +51,4 @@ cat ${olddatapath}/${olddataname} |sort > ${olddatapath}/${olddatasort}
 
 #diff처리
 diff -w ${newdatapath}/${newdatasort} ${olddatapath}/${olddatasort} > ./diffresult/${newdataname}
+#done
