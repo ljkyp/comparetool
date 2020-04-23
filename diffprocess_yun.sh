@@ -13,15 +13,14 @@
 #wc 신 ,현  
 #diff 신 현 > ./diffresult/이름
 
-#sh ./diffprocess_yun.sh ./newdata/datalist.csv ./olddata/datalist.csv ./patterncsv.csv 1
+#sh ./diffprocess_yun.sh ./newdata/datacsv1.csv ./olddata/datacsv1.csv 0
 
 #파일이름 리스트를 받음?
 #newdatalist=$1
 #olddatalist=$2
 newdataname=$1
 olddataname=$2
-patternFile=$3
-header_flg=$4
+header_flg=$3
 newdatapath=./newdata/
 olddatapath=./olddata/
 #건 수
