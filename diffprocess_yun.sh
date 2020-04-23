@@ -50,5 +50,7 @@ cat ${newdatapath}/${newdataname} |sort > ${newdatapath}/${newdatasort}
 cat ${olddatapath}/${olddataname} |sort > ${olddatapath}/${olddatasort}
 
 #diff처리
+# -sq
+# -r
 diff -w ${newdatapath}/${newdatasort} ${olddatapath}/${olddatasort} > ./diffresult/${newdataname}
 #done
