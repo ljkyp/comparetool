@@ -1,6 +1,7 @@
 #!/bin/ksh
 
-# JeonGB-2:comparetool JeonGB$ ksh ./compare_jeon.ksh ./newdata/datacsv1.csv ./olddata/datacsv1.csv ./patterncsv.csv
+# 実行コマンド
+# ksh ./compare_jeon.ksh ./newdata/datacsv1.csv ./olddata/datacsv1.csv ./patterncsv.csv
 
 # 引数確認
 ###todo### 引数追加される予定
