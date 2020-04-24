@@ -32,7 +32,7 @@ inputFileExt=${inputDataFile#*.}
 
 if [[ $headerFlag -eq 1 ]]; then
     tail +2 $inputDataPath$inputDataFile > ./tempInputData.csv
-elif [[ oldNewFlag -eq 1 ]]; then
+elif [[ $headerFlag -eq 0 ]]; then
     cat $inputDataPath$inputDataFile > ./tempInputData.csv
 else
     echo 'headerFlagは０または１）'
