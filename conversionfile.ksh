@@ -24,11 +24,12 @@ else
     exit 255
 fi
 
+inputFileName=${inputDataFile%.*}
+inputFileExt=${inputDataFile#*.}
+
 outputDataFile=$outputDataPath$inputDataFile
 patternPath='./pattern/'
-patternFile=$patternPath$inputDataFile
-
-inputFileExt=${inputDataFile#*.}
+patternFile=$patternPath$inputFileName'.csv'
 
 if [[ $headerFlag -eq 1 ]]; then
     tail +2 $inputDataPath$inputDataFile > ./tempInputData.csv
@@ -39,50 +40,45 @@ else
     exit 255
 fi
 
+# パターンファイルから比較対象を抽出する。
+###todo### ファイル名を変数化する予定
+tail -n 1 $patternFile |sed 's/\([^,]*\),\(.*\)/\2/' > ./tempPattern.csv
+
+count=0
+isRemained=TRUE
+
+touch ./tempPattern2.csv
+
+# awk用パターンファイルを作成する。
+while $isRemained
+do
+    count=$(( $count + 1 ))
+    result=`cat ./tempPattern.csv | cut -f $count -d ','`
+    if [[ $result != '' ]]; then
+        if [[ $result != '0' ]]; then
+            echo -n '$'$count',' >> ./tempPattern2.csv
+        fi
+    else
+        sed 's/\(\,$\)//g' ./tempPattern2.csv > ./tempPattern3.csv
+        isRemained=FALSE
+    fi
+done
+
 # 拡張子確認
 if [[ $inputFileExt == 'csv' ]]; then
     # 拡張子がcsvの場合
 
-    # パターンファイルから比較対象を抽出する。
-    ###todo### ファイル名を変数化する予定
-    tail -n 1 $patternFile |sed 's/\([^,]*\),\(.*\)/\2/' > ./tempCsvPattern.csv
-
-    count=0
-    isRemained=TRUE
-
-    touch ./tempCsvPattern2.csv
-
-    # awk用パターンファイルを作成する。
-    while $isRemained
-    do
-        count=$(( $count + 1 ))
-        result=`cat ./tempCsvPattern.csv | cut -f $count -d ','`
-        if [[ $result != '' ]]; then
-            if [[ $result != '0' ]]; then
-                echo -n '$'$count',' >> ./tempCsvPattern2.csv
-            fi
-        else
-            sed 's/\(\,$\)//g' ./tempCsvPattern2.csv > ./tempCsvPattern3.csv
-            isRemained=FALSE
-        fi
-    done
-
     # awk用パターンファイルから指定された項目を出力する。
-    pattern=$(<./tempCsvPattern3.csv)
+    pattern=$(<./tempPattern3.csv)
 
-    cat ./tempInputData.csv |awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' > $outputDataFile
-
-    # ゴミデータ削除
-    rm ./tempCsvPattern.csv ./tempCsvPattern2.csv ./tempCsvPattern3.csv
+    awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' ./tempInputData.csv > $outputDataFile
 
 elif [[ $inputFileExt == 'txt' ]]; then
     # 拡張子がtxtの場合
 
     length=$(awk 'BEGIN{ FS=","; OFS=","; } { if(NR == 3){ print $0 } }' $patternFile |sed 's/\([^,]*\),\(.*\)/\2/')
-    compare=$(awk 'BEGIN{ FS=","; OFS=","; } { if(NR == 4){ print $0 } }' $patternFile |sed 's/\([^,]*\),\(.*\)/\2/')
 
     lengthArr=( )
-    compareArr=( )
 
     count=0
     isRemained=TRUE
@@ -93,24 +89,6 @@ elif [[ $inputFileExt == 'txt' ]]; then
         var=$(echo $length | cut -f $count -d ',') 
         if [[ $var != '' ]]; then
             lengthArr[$count-1]=$var
-        else
-            isRemained=FALSE
-        fi
-    done
-
-    count=0
-    count_=0
-    isRemained=TRUE
-
-    while $isRemained
-    do
-        count=$(( $count + 1 ))
-        var=$(echo $compare | cut -f $count -d ',') 
-        if [[ $var != '' ]]; then
-            if [[ $var == '0' ]]; then
-                compareArr[$count_]=$count
-                count_=$(( $count_ + 1 ))
-            fi
         else
             isRemained=FALSE
         fi
@@ -136,8 +114,6 @@ elif [[ $inputFileExt == 'txt' ]]; then
                 fi
 
                 result=$div1","$div2
-                echo $result
-                echo ""
             else
                 echo $result |sed 's/\(\,$\)//g' >> ./tempTextPattern.csv
                 isRemained=FALSE
@@ -147,21 +123,35 @@ elif [[ $inputFileExt == 'txt' ]]; then
         done
         count=0
         isRemained=TRUE
-    done < $tempInputData
+    done < ./tempInputData.csv
 
-    ##############################
-    #### 未作成部分              ####
-    #### csvコンバート作業とほぼ同じ ####
-    ##############################
+    # awk用パターンファイルから指定された項目を出力する。
+    pattern=$(<./tempPattern3.csv)
 
-    rm ./tempTextPattern.csv
+    awk 'BEGIN{ FS=","; OFS=""; } { print '$pattern'; }' ./tempTextPattern.csv > $outputDataFile
+
 else
     # 拡張子が正しくない場合
     echo '拡張子がtxtやcsvではない。'
     exit 255
 fi
 
-rm ./tempInputData.csv
+# ゴミデータ削除
+if [[ -f "./tempPattern.csv" ]]; then
+    rm ./tempPattern.csv
+fi
+if [[ -f "./tempPattern2.csv" ]]; then
+    rm ./tempPattern2.csv
+fi
+if [[ -f "./tempPattern3.csv" ]]; then
+    rm ./tempPattern3.csv
+fi
+if [[ -f "./tempInputData.csv" ]]; then
+    rm ./tempInputData.csv
+fi
+if [[ -f "./tempTextPattern.csv" ]]; then
+    rm ./tempTextPattern.csv
+fi
 
 # 正常終了
 exit 0
