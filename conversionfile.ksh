@@ -1,5 +1,8 @@
 #!/bin/ksh
 
+# 実行コマンド 例）
+# ksh ./conversionfile.ksh ./newdata/ datacsv1.csv 0 1
+
 # 引数確認
 ###todo### 引数追加される予定
 if [[ $# -ne 4 ]]; then
@@ -67,7 +70,6 @@ if [[ $inputFileExt == 'csv' ]]; then
     # awk用パターンファイルから指定された項目を出力する。
     pattern=$(<./tempCsvPattern3.csv)
 
-    cat ./tempInputData.csv
     cat ./tempInputData.csv |awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' > $outputDataFile
 
     # ゴミデータ削除
