@@ -50,7 +50,7 @@ isRemained=TRUE
 touch ./tempPattern2.csv
 
 # awk用パターンファイルを作成する。
-while $isRemained
+while [ $isRemained == TRUE ]
 do
     count=$(( $count + 1 ))
     result=`cat ./tempPattern.csv | cut -f $count -d ','`
@@ -83,7 +83,7 @@ elif [[ $inputFileExt == 'txt' ]]; then
     count=0
     isRemained=TRUE
 
-    while $isRemained
+    while [ $isRemained == TRUE ]
     do
         count=$(( $count + 1 ))
         var=$(echo $length | cut -f $count -d ',') 
@@ -101,7 +101,7 @@ elif [[ $inputFileExt == 'txt' ]]; then
 
     while read line
     do
-        while $isRemained
+        while [ $isRemained == TRUE ]
         do
             if [[ ${#lengthArr[@]} -ne $count ]]; then
                 if [[ $count -eq 0 ]]; then
