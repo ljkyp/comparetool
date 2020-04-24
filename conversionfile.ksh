@@ -2,31 +2,38 @@
 
 # 引数確認
 ###todo### 引数追加される予定
-if [[ $# -ne 3 ]]; then
-    echo '引数は3個必要（現：'$#'個）'
+if [[ $# -ne 4 ]]; then
+    echo '引数は4個必要（現：'$#'個）'
     exit 255
 fi
 
 inputDataPath=$1
 inputDataFile=$2
 headerFlag=$3
+oldNewFlag=$4
 
-#outputDataPath='./output/'
-outputDataFile='./output/'$inputDataFile
-#patternPath='./pattern/'
-patternFile='./pattern/'$inputDataFile
+if [[ oldNewFlag -eq 0 ]]; then
+    outputDataPath='./oldoutput/'
+elif [[ oldNewFlag -eq 1 ]]; then
+    outputDataPath='./newoutput/'
+else
+    echo '現新Flagは０または１）'
+    exit 255
+fi
+
+outputDataFile=$outputDataPath$inputDataFile
+patternPath='./pattern/'
+patternFile=$patternPath$inputDataFile
 
 inputFileExt=${inputDataFile#*.}
 
-# 現新の拡張子比較
-if [[ $inputFileExt != $oldFileExt ]]; then
-   echo '比較対象の拡張子が異なる。'
-   exit 255
-fi
-
 if [[ $headerFlag -eq 1 ]]; then
-    headDeletedFile=$(tail +2 $inputDataFile)
-    cat headDeletedFile > $inputDataFile
+    tail +2 $inputDataPath$inputDataFile > ./tempInputData.csv
+elif [[ oldNewFlag -eq 1 ]]; then
+    cat $inputDataPath$inputDataFile > ./tempInputData.csv
+else
+    echo 'headerFlagは０または１）'
+    exit 255
 fi
 
 # 拡張子確認
@@ -59,8 +66,9 @@ if [[ $inputFileExt == 'csv' ]]; then
 
     # awk用パターンファイルから指定された項目を出力する。
     pattern=$(<./tempCsvPattern3.csv)
-    awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' $inputDataFile
-    # 失敗コード : awk -v ptn=$pattern 'BEGIN{ FS=","; OFS=","; } { print ptn; }' $inputDataFile
+
+    cat ./tempInputData.csv
+    cat ./tempInputData.csv |awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' > $outputDataFile
 
     # ゴミデータ削除
     rm ./tempCsvPattern.csv ./tempCsvPattern2.csv ./tempCsvPattern3.csv
@@ -137,7 +145,7 @@ elif [[ $inputFileExt == 'txt' ]]; then
         done
         count=0
         isRemained=TRUE
-    done < $2
+    done < $tempInputData
 
     ##############################
     #### 未作成部分              ####
@@ -150,6 +158,8 @@ else
     echo '拡張子がtxtやcsvではない。'
     exit 255
 fi
+
+rm ./tempInputData.csv
 
 # 正常終了
 exit 0
