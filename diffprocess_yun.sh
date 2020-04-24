@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 #  - 파일리스트 작성한것을 호출
 #  - 파일 컨버젼 셀호출하는 기능
 #  - sort
@@ -8,30 +8,43 @@
 
 #sh ./diffprocess_yun.sh ./newdata/datacsv1.csv ./olddata/datacsv1.csv 0
 
+# INPUT OUTPUT path
+
 #파라미터 지정
-newdataname=$1
-olddataname=$2
+sin_name=$1
+gen_name=$2
 header_flg=$3
-newdatapath=./newdata/
-olddatapath=./olddata/
+sin_path=./newdata/
+gen_path=./olddata/
+sinoutputpath=./newoutput/
+genoutputpath=./oldoutput/
 #건 수 지정후 파일
-wc_new='wc_'${newdataname}
-wc_old='wc_'$olddataname
+wc_new='wc_'${sin_name}
+wc_old='wc_'${gen_name}
 #sort후 파일
-newdatasort=sort_${newdataname}
-olddatasort=sort_${olddataname}
+newdatasort=sort_${sin_name}
+olddatasort=sort_${gen_name}
+
+#파라미터 체크
+if [[ $# -ne 3 ]]; then
+    echo '引数は3個必要（現：'$#'個）'
+    exit 255
+fi
 
 #컨버전 셀 호출
-sh ./conversionfile.ksh ${newdatapath} ${newdataname} ${header_flg}
+#header_flg = 0 header なし　header_flg = 1 header あり
+#gensin_flg = 0 現行　header_flg = 1　新行
+sh ./conversionfile.ksh ${sin_path} ${sin_name} ${header_flg} 1 #新
+sh ./conversionfile.ksh ${gen_path} ${gen_name} ${header_flg} 0 #現
 
 #데이터 건 수 저장
-wc ${newdatapath}/${newdataname} > ${newdatapath}/${wc_new}
-wc ${olddatapath}/${olddataname} > ${olddatapath}/${wc_old}
+wc ${outputpath}/${sin_outputDataFile} > ${outputpath}/${wc_new}
+wc ${outputpath}/${gen_outputDataFile} > ${outputpath}/${wc_old}
 
 #sort처리
-cat ${newdatapath}/${newdataname} |sort > ${newdatapath}/${newdatasort}
-cat ${olddatapath}/${olddataname} |sort > ${olddatapath}/${olddatasort}
+cat ${outputpath}/${sin_outputDataFile} |sort > ${outputpath}/${newdatasort}
+cat ${outputpath}/${gen_outputDataFile} |sort > ${outputpath}/${olddatasort}
 
 #diff처리
-diff -w ${newdatapath}/${newdatasort} ${olddatapath}/${olddatasort} > ./diffresult/${newdataname}
+diff -w ${outputpath}/${newdatasort} ${outputpath}/${olddatasort} > ./diffresult/${sin_name}
 #done
