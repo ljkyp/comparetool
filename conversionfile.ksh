@@ -4,131 +4,152 @@
 # ksh ./conversionfile.ksh ./newdata/ datacsv1.csv 0 1
 
 # 引数確認
-###todo### 引数追加される予定
 if [[ $# -ne 4 ]]; then
     echo '引数は4個必要（現：'$#'個）'
     exit 255
 fi
 
-inputDataPath=$1
-inputDataFile=$2
-headerFlag=$3
-oldNewFlag=$4
+# 入力データパス
+INPUT_DATA_PATH=$1
+# 入力データファイル名
+INPUT_DATA_FILE=$2
+# ヘッダーフラグ
+HEADER_FLAG=$3
+# 現新フラグ
+OLD_NEW_FLAG=$4
 
-if [[ oldNewFlag -eq 0 ]]; then
-    outputDataPath='./oldoutput/'
-elif [[ oldNewFlag -eq 1 ]]; then
-    outputDataPath='./newoutput/'
+# 現新フラグによって出力データのパスを設定
+if [[ OLD_NEW_FLAG -eq 0 ]]; then
+    OUTPUT_DATA_PATH='./oldoutput/'
+elif [[ OLD_NEW_FLAG -eq 1 ]]; then
+    OUTPUT_DATA_PATH='./newoutput/'
 else
     echo '現新Flagは０または１）'
     exit 255
 fi
 
-inputFileName=${inputDataFile%.*}
-inputFileExt=${inputDataFile#*.}
+# 入力ファイル名（拡張子抜き）
+INPUT_FILE_NAME=${INPUT_DATA_FILE%.*}
+# 入力ファイルの拡張子（ファイル名抜き）
+INPUT_FILE_EXT=${INPUT_DATA_FILE#*.}
 
-outputDataFile=$outputDataPath$inputDataFile
-patternPath='./pattern/'
-patternFile=$patternPath$inputFileName'.csv'
+# 出力ファイルフルパス
+OUTPUT_DATA_FILE=$OUTPUT_DATA_PATH$INPUT_DATA_FILE
+# パターンファイルパス
+PATTERN_PATH='./pattern/'
+# パターンファイル名
+PATTERN_FILE=$PATTERN_PATH$INPUT_FILE_NAME'.csv'
 
-if [[ $headerFlag -eq 1 ]]; then
-    tail +2 $inputDataPath$inputDataFile > ./tempInputData.csv
-elif [[ $headerFlag -eq 0 ]]; then
-    cat $inputDataPath$inputDataFile > ./tempInputData.csv
+# 仮ファイル
+TEMP_INPUT_DATA='./tempInputData.csv'
+TEMP_PATTERN='./tempPattern.csv'
+TEMP_PATTERN2='./tempPattern2.csv'
+TEMP_PATTERN3='./tempPattern3.csv'
+TEMP_TEXT_PATTERN='./tempTextPattern.csv'
+
+# ヘッダーフラグによるヘッダー削除処理
+if [[ $HEADER_FLAG -eq 1 ]]; then
+    tail +2 $INPUT_DATA_PATH$INPUT_DATA_FILE > $TEMP_INPUT_DATA
+elif [[ $HEADER_FLAG -eq 0 ]]; then
+    cat $INPUT_DATA_PATH$INPUT_DATA_FILE > $TEMP_INPUT_DATA
 else
-    echo 'headerFlagは０または１）'
+    echo 'HEADER_FLAGは０または１）'
     exit 255
 fi
 
 # パターンファイルから比較対象を抽出する。
-###todo### ファイル名を変数化する予定
-tail -n 1 $patternFile |sed 's/\([^,]*\),\(.*\)/\2/' > ./tempPattern.csv
+tail -n 1 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' > $TEMP_PATTERN
 
-count=0
-isRemained=TRUE
+COUNT=0
+IS_REMAINED=TRUE
 
-touch ./tempPattern2.csv
+touch $TEMP_PATTERN2
 
 # awk用パターンファイルを作成する。
-while [ $isRemained == TRUE ]
+while [ $IS_REMAINED == TRUE ]
 do
-    count=$(( $count + 1 ))
-    result=`cat ./tempPattern.csv | cut -f $count -d ','`
-    if [[ $result != '' ]]; then
-        if [[ $result != '0' ]]; then
-            echo -n '$'$count',' >> ./tempPattern2.csv
+    COUNT=$(( $COUNT + 1 ))
+    RESULT=`cat $TEMP_PATTERN | cut -f $COUNT -d ','`
+    if [[ $RESULT != '' ]]; then
+        if [[ $RESULT != '0' ]]; then
+            echo -n '$'$COUNT',' >> $TEMP_PATTERN2
         fi
     else
-        sed 's/\(\,$\)//g' ./tempPattern2.csv > ./tempPattern3.csv
-        isRemained=FALSE
+        sed 's/\(\,$\)//g' $TEMP_PATTERN2 > $TEMP_PATTERN3
+        IS_REMAINED=FALSE
     fi
 done
 
 # 拡張子確認
-if [[ $inputFileExt == 'csv' ]]; then
+if [[ $INPUT_FILE_EXT == 'csv' ]]; then
     # 拡張子がcsvの場合
 
     # awk用パターンファイルから指定された項目を出力する。
-    pattern=$(<./tempPattern3.csv)
+    PATTERN=$(<$TEMP_PATTERN3)
 
-    awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' ./tempInputData.csv > $outputDataFile
+    # 入力データを変換し、出力ファイルを作成する。
+    awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
 
-elif [[ $inputFileExt == 'txt' ]]; then
+elif [[ $INPUT_FILE_EXT == 'txt' ]]; then
     # 拡張子がtxtの場合
 
-    length=$(awk 'BEGIN{ FS=","; OFS=","; } { if(NR == 3){ print $0 } }' $patternFile |sed 's/\([^,]*\),\(.*\)/\2/')
+    # パターンファイルから固定長ファイルの長さを取得する。
+    LENGTH=$(awk 'BEGIN{ FS=","; OFS=","; } { if(NR == 3){ print $0 } }' $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/')
 
-    lengthArr=( )
+    LENGTH_ARR=( )
 
-    count=0
-    isRemained=TRUE
+    COUNT=0
+    IS_REMAINED=TRUE
 
-    while [ $isRemained == TRUE ]
+    # 長さ情報を配列に格納する。
+    while [ $IS_REMAINED == TRUE ]
     do
-        count=$(( $count + 1 ))
-        var=$(echo $length | cut -f $count -d ',') 
-        if [[ $var != '' ]]; then
-            lengthArr[$count-1]=$var
+        COUNT=$(( $COUNT + 1 ))
+        VAR=$(echo $LENGTH | cut -f $COUNT -d ',') 
+        if [[ $VAR != '' ]]; then
+            LENGTH_ARR[$COUNT-1]=$VAR
         else
-            isRemained=FALSE
+            IS_REMAINED=FALSE
         fi
     done
 
-    count=0
-    isRemained=TRUE
+    COUNT=0
+    IS_REMAINED=TRUE
 
-    touch ./tempTextPattern.csv
+    touch $TEMP_TEXT_PATTERN
 
-    while read line
+    # awk用パターンファイルを作成する。
+    while read LINE
     do
-        while [ $isRemained == TRUE ]
+        while [ $IS_REMAINED == TRUE ]
         do
-            if [[ ${#lengthArr[@]} -ne $count ]]; then
-                if [[ $count -eq 0 ]]; then
-                    div1=$(echo $line | cut -c 1-${lengthArr[$count]}) 
-                    div2=$(echo $line | sed 's/\(^'$div1'\)\(.*\)/\2/') 
+            if [[ ${#LENGTH_ARR[@]} -ne $COUNT ]]; then
+                if [[ $COUNT -eq 0 ]]; then
+                    DIV1=$(echo $LINE | cut -c 1-${LENGTH_ARR[$COUNT]}) 
+                    DIV2=$(echo $LINE | sed 's/\(^'$DIV1'\)\(.*\)/\2/') 
                 else
-                    div2=$(echo $result | cut -d ',' -f $(expr $count + 1))
-                    div1=$div1,$(echo $div2 | cut -c 1-${lengthArr[$count]})
-                    div2=$(echo $div2 | cut -c $(expr ${lengthArr[$count]} + 1)-)
+                    DIV2=$(echo $result | cut -d ',' -f $(expr $COUNT + 1))
+                    DIV1=$DIV1,$(echo $DIV2 | cut -c 1-${LENGTH_ARR[$COUNT]})
+                    DIV2=$(echo $DIV2 | cut -c $(expr ${LENGTH_ARR[$COUNT]} + 1)-)
                 fi
 
-                result=$div1","$div2
+                RESULT=$DIV1","$DIV2
             else
-                echo $result |sed 's/\(\,$\)//g' >> ./tempTextPattern.csv
-                isRemained=FALSE
+                echo $RESULT |sed 's/\(\,$\)//g' >> $TEMP_TEXT_PATTERN
+                IS_REMAINED=FALSE
             fi
 
-            count=$(( $count + 1 ))
+            COUNT=$(( $COUNT + 1 ))
         done
-        count=0
-        isRemained=TRUE
-    done < ./tempInputData.csv
+        COUNT=0
+        IS_REMAINED=TRUE
+    done < $TEMP_INPUT_DATA
 
     # awk用パターンファイルから指定された項目を出力する。
-    pattern=$(<./tempPattern3.csv)
+    PATTERN=$(<$TEMP_PATTERN3)
 
-    awk 'BEGIN{ FS=","; OFS=""; } { print '$pattern'; }' ./tempTextPattern.csv > $outputDataFile
+    # 入力データを変換し、出力ファイルを作成する。
+    awk 'BEGIN{ FS=","; OFS=""; } { print '$PATTERN'; }' $TEMP_TEXT_PATTERN > $OUTPUT_DATA_FILE
 
 else
     # 拡張子が正しくない場合
@@ -136,21 +157,21 @@ else
     exit 255
 fi
 
-# ゴミデータ削除
-if [[ -f "./tempPattern.csv" ]]; then
-    rm ./tempPattern.csv
+# 仮ファイル削除
+if [[ -f "$TEMP_PATTERN" ]]; then
+    rm $TEMP_PATTERN
 fi
-if [[ -f "./tempPattern2.csv" ]]; then
-    rm ./tempPattern2.csv
+if [[ -f "$TEMP_PATTERN2" ]]; then
+    rm $TEMP_PATTERN2
 fi
-if [[ -f "./tempPattern3.csv" ]]; then
-    rm ./tempPattern3.csv
+if [[ -f "$TEMP_PATTERN3" ]]; then
+    rm $TEMP_PATTERN3
 fi
-if [[ -f "./tempInputData.csv" ]]; then
-    rm ./tempInputData.csv
+if [[ -f "$TEMP_INPUT_DATA" ]]; then
+    rm $TEMP_INPUT_DATA
 fi
-if [[ -f "./tempTextPattern.csv" ]]; then
-    rm ./tempTextPattern.csv
+if [[ -f "$TEMP_TEXT_PATTERN" ]]; then
+    rm $TEMP_TEXT_PATTERN
 fi
 
 # 正常終了
