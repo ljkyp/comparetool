@@ -1,7 +1,7 @@
 #!/bin/ksh
-#ksh ./conversionfile_im.ksh ./newdata/ datatxt11.txt 0 1  #header なし
-#ksh ./conversionfile_im.ksh ./newdata/ datatxt11.txt 1 1  #header あり
-#ksh ./conversionfile_im.ksh ./newdata/ datacsv11.csv 0 1
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 0 1  #header なし
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1  #header あり
+#ksh ./conversionfile.ksh ./newdata/ datacsv11.csv 0 1
 
 if [[ $# -ne 4 ]]; then
     echo '引数は4個必要（現：'$#'個）'
