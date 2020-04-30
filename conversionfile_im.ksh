@@ -79,12 +79,12 @@ if [[ $INPUT_FILE_EXT == 'csv' ]]; then
     do
         COUNT=$(( $COUNT + 1 ))
         #patternファイルでTXTは出力制限項目を、CSVは項目長さを読んで値があれば
-        RESULT=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
-        if [[ $RESULT != '' ]]; then
+        OUTPUT_ITEM=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
+        if [[ $OUTPUT_ITEM != '' ]]; then
             #特殊文字排除
-            RESULT=`echo $RESULT | sed 's/[^0-9]//g'`
+            OUTPUT_ITEM=`echo $OUTPUT_ITEM | sed 's/[^0-9]//g'`
             #Patternによって'0'は出力制限
-            if [[ $RESULT != '0' ]]; then
+            if [[ $OUTPUT_ITEM != '0' ]]; then
                 echo -n '$'$COUNT',' >> $TEMP_OUTPUTPATTERN2
             fi
         else
@@ -97,21 +97,21 @@ elif [[ $INPUT_FILE_EXT == 'txt' ]]; then
     do
         COUNT=$(( $COUNT + 1 ))
         #patternファイルでTXTは出力制限項目を、CSVは項目長さを読んで値があれば
-        RESULT=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
+        OUTPUT_ITEM=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
         #cut用　length計算
-        RESULT2=`cat $TEMP_LENGTHPATTERN | cut -f $COUNT -d ','`
+        CUT_LENGTH=`cat $TEMP_LENGTHPATTERN | cut -f $COUNT -d ','`
         #patternファイルの出力制限項目を読んで値があれば
-        if [[ $RESULT != '' ]]; then
+        if [[ $OUTPUT_ITEM != '' ]]; then
             #特殊文字排除
-            RESULT2=`echo $RESULT2 | sed 's/[^0-9]//g'`
+            CUT_LENGTH=`echo $CUT_LENGTH | sed 's/[^0-9]//g'`
             #cutするEnd位置計算
             if [[ $END -eq 0 ]]; then
-                END=$RESULT2
+                END=$CUT_LENGTH
             else
-                END=`expr $END + $RESULT2`
+                END=`expr $END + $CUT_LENGTH`
             fi
             #Patternによって'0'は出力制限
-            if [[ $RESULT != '0' ]]; then
+            if [[ $OUTPUT_ITEM != '0' ]]; then
                 echo -n  $START'-'$END',' >> $TEMP_OUTPUTPATTERN2
             fi
             #cutするStart位置計算
@@ -155,6 +155,9 @@ cat $OUTPUT_DATA_FILE
 
 
 # 仮ファイル削除(出力パータンファイル)
+if [[ -f "$TEMP_LENGTHPATTERN" ]]; then
+    rm $TEMP_LENGTHPATTERN
+fi
 if [[ -f "$TEMP_OUTPUTPATTERN" ]]; then
     rm $TEMP_OUTPUTPATTERN
 fi
