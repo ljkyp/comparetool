@@ -1,10 +1,11 @@
 #!/bin/ksh
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 0 1  #header なし
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1  #header あり
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 0 1     #header なし ソートキー なし
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1     #header あり ソートキー なし
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1 2,4 #header あり ソートキー あり
 #ksh ./conversionfile.ksh ./newdata/ datacsv11.csv 0 1
 
-if [[ $# -ne 4 ]]; then
-    echo '引数は4個必要（現：'$#'個）'
+if [[ $# -ne 4 && $# -ne 5 ]]; then
+    echo '引数は4個または5個必要（現：'$#'個）'
     exit 255
 fi
 
@@ -16,6 +17,8 @@ INPUT_DATA_FILE=$2
 HEADER_FLAG=$3
 # 現新フラグ
 OLD_NEW_FLAG=$4
+# ソートキー
+SORT_KEY=$5
 
 
 # 現新フラグによって出力データのパスを設定
@@ -73,7 +76,7 @@ END=0
 
 touch $TEMP_OUTPUTPATTERN2
 
-if [[ $INPUT_FILE_EXT == 'csv' ]]; then
+if [[ $INPUT_FILE_EXT == 'csv' || $INPUT_FILE_EXT == 'CSV' ]]; then
     # CSVファイルのawk用パターンファイルを作成する。
     while [ $IS_REMAINED == TRUE ]
     do
@@ -91,7 +94,7 @@ if [[ $INPUT_FILE_EXT == 'csv' ]]; then
             IS_REMAINED=FALSE
         fi
     done
-elif [[ $INPUT_FILE_EXT == 'txt' ]]; then
+elif [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
     # TXTファイルのsut用パターンファイルを作成する。
     while [ $IS_REMAINED == TRUE ]
     do
@@ -128,16 +131,32 @@ sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN2 > $TEMP_OUTPUTPATTERN3
 # パターンファイルから指定された項目を出力する。
 PATTERN=$(<$TEMP_OUTPUTPATTERN3)
 
+if [[ -n $SORT_KEY ]]; then
+    SORT_PATTERN=`echo $SORT_KEY |awk 'BEGIN{ FS=","; } { for (i=1; i<=NF; i++) printf "-k "$i","$i" "; }'`
+fi
+
 # 拡張子確認
-if [[ $INPUT_FILE_EXT == 'csv' ]]; then
+if [[ $INPUT_FILE_EXT == 'csv' || $INPUT_FILE_EXT == 'CSV' ]]; then
 
-    # 入力データを変換し、出力ファイルを作成する。
-    awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
+    if [[ -z $SORT_PATTERN ]]; then
+        # 入力データを変換し、出力ファイルを作成する。
+        awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
+    else
+        # 入力データを変換し、出力ファイルを作成する。
+        sort $SORT_PATTERN -t ',' $TEMP_INPUT_DATA | awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' > $OUTPUT_DATA_FILE
+    fi
 
-elif [[ $INPUT_FILE_EXT == 'txt' ]]; then
-    # 入力データを変換し、出力ファイルを作成する。
-    # cat ./newdata/datatxt1.txt | cut -c1-1,2-5,6-10,11-14,23-26,27-30,31-34,35-38
-    cat $TEMP_INPUT_DATA | cut -c$PATTERN > $OUTPUT_DATA_FILE
+elif [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
+
+    if [[ -z $SORT_PATTERN ]]; then
+        # 入力データを変換し、出力ファイルを作成する。
+        # cat ./newdata/datatxt1.txt | cut -c1-1,2-5,6-10,11-14,23-26,27-30,31-34,35-38
+        cat $TEMP_INPUT_DATA | cut -c$PATTERN > $OUTPUT_DATA_FILE
+    else
+        # 入力データを変換し、出力ファイルを作成する。
+        #cat $TEMP_INPUT_DATA | cut -c$PATTERN --output-delimiter=' ' | sort $SORT_PATTERN -t ' ' > $OUTPUT_DATA_FILE
+        cat $TEMP_INPUT_DATA | cut -c$PATTERN --output-delimiter=' ' | sort $SORT_PATTERN -t ' ' > $OUTPUT_DATA_FILE
+    fi
 
 else
     # 拡張子が正しくない場合
@@ -146,12 +165,12 @@ else
 fi
 
 #原本ファイル
-echo '原本ファイル'
-cat  $INPUT_DATA_PATH$INPUT_DATA_FILE
-echo ''
+#echo '原本ファイル'
+#cat  $INPUT_DATA_PATH$INPUT_DATA_FILE
+#echo ''
 #変換後ファイル
-echo '変換後ファイル'
-cat $OUTPUT_DATA_FILE
+#echo '変換後ファイル'
+#cat $OUTPUT_DATA_FILE
 
 
 # 仮ファイル削除(出力パータンファイル)
