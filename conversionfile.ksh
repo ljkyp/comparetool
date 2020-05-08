@@ -46,10 +46,11 @@ PATTERN_FILE=$PATTERN_PATH$INPUT_FILE_NAME'.csv'
 
 # 仮ファイル
 TEMP_INPUT_DATA='./tempInputData.csv'
+TEMP_INPUT_DATA_TXT='./tempInputData_txt.csv'
 TEMP_LENGTHPATTERN='./lengthPattern.csv'
 TEMP_OUTPUTPATTERN='./outputpattern.csv'
 TEMP_OUTPUTPATTERN2='./outputpattern2.csv'
-TEMP_OUTPUTPATTERN3='./outputpattern3.csv'
+TEMP_OUTPUTPATTERN_TXT='./outputpattern_txt.csv'
 
 # ヘッダーフラグによるヘッダー削除処理
 if [[ $HEADER_FLAG -eq 1 ]]; then
@@ -71,31 +72,35 @@ tail -n 2 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' | sed '2d' > $TEMP_LENGTHP
 
 COUNT=0
 IS_REMAINED=TRUE
+
+touch $TEMP_OUTPUTPATTERN2
+touch $TEMP_OUTPUTPATTERN_TXT
+
+# awk用パターンファイルを作成する。
+while [ $IS_REMAINED == TRUE ]
+do
+    COUNT=$(( $COUNT + 1 ))
+    #patternファイルでTXTは出力制限項目を、CSVは項目長さを読んで値があれば
+    OUTPUT_ITEM=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
+    if [[ $OUTPUT_ITEM != '' ]]; then
+        #特殊文字排除
+        OUTPUT_ITEM=`echo $OUTPUT_ITEM | sed 's/[^0-9]//g'`
+        #Patternによって'0'は出力制限
+        if [[ $OUTPUT_ITEM != '0' ]]; then
+            echo -n '$'$COUNT',' >> $TEMP_OUTPUTPATTERN2
+        fi
+    else
+        IS_REMAINED=FALSE
+    fi
+done
+
+COUNT=0
+IS_REMAINED=TRUE
 START=1
 END=0
 
-touch $TEMP_OUTPUTPATTERN2
-
-if [[ $INPUT_FILE_EXT == 'csv' || $INPUT_FILE_EXT == 'CSV' ]]; then
-    # CSVファイルのawk用パターンファイルを作成する。
-    while [ $IS_REMAINED == TRUE ]
-    do
-        COUNT=$(( $COUNT + 1 ))
-        #patternファイルでTXTは出力制限項目を、CSVは項目長さを読んで値があれば
-        OUTPUT_ITEM=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
-        if [[ $OUTPUT_ITEM != '' ]]; then
-            #特殊文字排除
-            OUTPUT_ITEM=`echo $OUTPUT_ITEM | sed 's/[^0-9]//g'`
-            #Patternによって'0'は出力制限
-            if [[ $OUTPUT_ITEM != '0' ]]; then
-                echo -n '$'$COUNT',' >> $TEMP_OUTPUTPATTERN2
-            fi
-        else
-            IS_REMAINED=FALSE
-        fi
-    done
-elif [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
-    # TXTファイルのsut用パターンファイルを作成する。
+if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
+    # TXTファイルのcut用パターンファイルを作成する。
     while [ $IS_REMAINED == TRUE ]
     do
         COUNT=$(( $COUNT + 1 ))
@@ -113,10 +118,8 @@ elif [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
             else
                 END=`expr $END + $CUT_LENGTH`
             fi
-            #Patternによって'0'は出力制限
-            if [[ $OUTPUT_ITEM != '0' ]]; then
-                echo -n  $START'-'$END',' >> $TEMP_OUTPUTPATTERN2
-            fi
+            #cut用patternを作成
+            echo -n  $START'-'$END',' >> $TEMP_OUTPUTPATTERN_TXT
             #cutするStart位置計算
             START=`expr $END + 1`
 
@@ -124,53 +127,27 @@ elif [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
             IS_REMAINED=FALSE
         fi
     done
+
+    #最後の','を抜かして出力
+    PATTERN_TXT=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN_TXT`
+    #txtをcsv形式に変換
+    cat $TEMP_INPUT_DATA | cut -c$PATTERN_TXT --output-delimiter=',' > $TEMP_INPUT_DATA_TXT
+    #awkに使うため再購入
+    cat $TEMP_INPUT_DATA_TXT > $TEMP_INPUT_DATA
 fi
 
-#最後の','を抜かして出力'
-sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN2 > $TEMP_OUTPUTPATTERN3
-# パターンファイルから指定された項目を出力する。
-PATTERN=$(<$TEMP_OUTPUTPATTERN3)
+#最後の','を抜かして出力
+PATTERN=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN2`
 
+# ソートキーによってsortコマンド用patternを作成
 if [[ -n $SORT_KEY ]]; then
     SORT_PATTERN=`echo $SORT_KEY |awk 'BEGIN{ FS=","; } { for (i=1; i<=NF; i++) printf "-k "$i","$i" "; }'`
-fi
-
-# 拡張子確認
-if [[ $INPUT_FILE_EXT == 'csv' || $INPUT_FILE_EXT == 'CSV' ]]; then
-
-    if [[ -z $SORT_PATTERN ]]; then
-        # 入力データを変換し、出力ファイルを作成する。
-        awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
-    else
-        # 入力データを変換し、出力ファイルを作成する。
-        sort $SORT_PATTERN -t ',' $TEMP_INPUT_DATA | awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' > $OUTPUT_DATA_FILE
-    fi
-
-elif [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
-
-    if [[ -z $SORT_PATTERN ]]; then
-        # 入力データを変換し、出力ファイルを作成する。
-        # cat ./newdata/datatxt1.txt | cut -c1-1,2-5,6-10,11-14,23-26,27-30,31-34,35-38
-        cat $TEMP_INPUT_DATA | cut -c$PATTERN > $OUTPUT_DATA_FILE
-    else
-        # 入力データを変換し、出力ファイルを作成する。
-        #cat $TEMP_INPUT_DATA | cut -c$PATTERN --output-delimiter=' ' | sort $SORT_PATTERN -t ' ' > $OUTPUT_DATA_FILE
-        cat $TEMP_INPUT_DATA | cut -c$PATTERN --output-delimiter=' ' | sort $SORT_PATTERN -t ' ' > $OUTPUT_DATA_FILE
-    fi
-
+    # 入力データを変換し、出力ファイルを作成する。
+    sort $SORT_PATTERN -t ',' $TEMP_INPUT_DATA | awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' > $OUTPUT_DATA_FILE
 else
-    # 拡張子が正しくない場合
-    echo '拡張子がtxtやcsvではない。'
-    exit 255
+    # 入力データを変換し、出力ファイルを作成する。
+    awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
 fi
-
-#原本ファイル
-#echo '原本ファイル'
-#cat  $INPUT_DATA_PATH$INPUT_DATA_FILE
-#echo ''
-#変換後ファイル
-#echo '変換後ファイル'
-#cat $OUTPUT_DATA_FILE
 
 
 # 仮ファイル削除(出力パータンファイル)
@@ -183,11 +160,14 @@ fi
 if [[ -f "$TEMP_OUTPUTPATTERN2" ]]; then
     rm $TEMP_OUTPUTPATTERN2
 fi
-if [[ -f "$TEMP_OUTPUTPATTERN3" ]]; then
-    rm $TEMP_OUTPUTPATTERN3
+if [[ -f "$TEMP_OUTPUTPATTERN_TXT" ]]; then
+    rm $TEMP_OUTPUTPATTERN_TXT
 fi
 if [[ -f "$TEMP_INPUT_DATA" ]]; then
     rm $TEMP_INPUT_DATA
+fi
+if [[ -f "$TEMP_INPUT_DATA_TXT" ]]; then
+    rm $TEMP_INPUT_DATA_TXT
 fi
 
 # 正常終了
