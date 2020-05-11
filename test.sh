@@ -1,149 +1,173 @@
 #!/bin/sh
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 0 1     #header なし ソートキー なし
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1     #header あり ソートキー なし
+#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1 2,4 #header あり ソートキー あり
+#ksh ./conversionfile.ksh ./newdata/ datacsv11.csv 0 1
 
-# 引数確認
-###todo### 引数追加される予定
-if [[ $# -ne 3 ]]; then
-    echo '引数は3個必要（現：'$#'個）'
+if [[ $# -ne 4 && $# -ne 5 ]]; then
+    echo '引数は4個または5個必要（現：'$#'個）'
     exit 255
 fi
 
-inputDataPath=$1
-inputDataFile=$2
-headerFlag=$3
+# 入力データパス
+INPUT_DATA_PATH=$1
+# 入力データファイル名
+INPUT_DATA_FILE=$2
+# ヘッダーフラグ
+HEADER_FLAG=$3
+# 現新フラグ
+OLD_NEW_FLAG=$4
+# ソートキー
+SORT_KEY=$5
 
-#outputDataPath='./output/'
-outputDataFile='./newoutput/'$inputDataFile
-#patternPath='./pattern/'
-patternFile='./pattern/'$inputDataFile
 
-inputFileExt=${inputDataFile#*.}
-
-
-if [[ $headerFlag -eq 1 ]]; then
-    headDeletedFile=$(tail +2 $inputDataFile)
-    cat headDeletedFile > $inputDataFile
+# 現新フラグによって出力データのパスを設定
+if [ $OLD_NEW_FLAG -eq 0 ]; then
+    OUTPUT_DATA_PATH = './oldoutput/'
+elif [ $OLD_NEW_FLAG -eq 1 ]; then
+    OUTPUT_DATA_PATH="./newoutput/"
+else
+    echo '現新Flagは０または１'
+    exit 255
 fi
 
-# 拡張子確認
-if [[ $inputFileExt == 'csv' ]]; then
-    # 拡張子がcsvの場合
 
-    # パターンファイルから比較対象を抽出する。
-    ###todo### ファイル名を変数化する予定
-    tail -n 1 $patternFile |sed 's/\([^,]*\),\(.*\)/\2/' > ./tempCsvPattern.csv
+# 入力ファイル名（拡張子抜き）
+INPUT_FILE_NAME=${INPUT_DATA_FILE%.*}
+# 入力ファイルの拡張子（ファイル名抜き）
+INPUT_FILE_EXT=${INPUT_DATA_FILE#*.}
 
-    # count=0
-    # isRemained=TRUE
+# 出力ファイルフルパス
+OUTPUT_DATA_FILE=$OUTPUT_DATA_PATH$INPUT_DATA_FILE
+# パターンファイルパス
+PATTERN_PATH='./pattern/'
+# パターンファイル名
+PATTERN_FILE=$PATTERN_PATH$INPUT_FILE_NAME'.csv'
 
-    # touch ./tempCsvPattern2.csv
+# 仮ファイル
+TEMP_INPUT_DATA='./tempInputData.csv'
+TEMP_INPUT_DATA_TXT='./tempInputData_txt.csv'
+TEMP_LENGTHPATTERN='./lengthPattern.csv'
+TEMP_OUTPUTPATTERN='./outputpattern.csv'
+TEMP_OUTPUTPATTERN2='./outputpattern2.csv'
+TEMP_OUTPUTPATTERN_TXT='./outputpattern_txt.csv'
 
-    # # awk用パターンファイルを作成する。
-    # while $isRemained
-    # do
-    #     count=$(( $count + 1 ))
-    #     result=`cat ./tempCsvPattern.csv | cut -f $count -d ','`
-    #     if [[ $result != '' ]]; then
-    #         if [[ $result != '0' ]]; then
-    #             echo -n '$'$count',' >> ./tempCsvPattern2.csv
-    #         fi
-    #     else
-    #         sed 's/\(\,$\)//g' ./tempCsvPattern2.csv > ./tempCsvPattern3.csv
-    #         isRemained=FALSE
-    #     fi
-    # done
+# ヘッダーフラグによるヘッダー削除処理
+if [[ $HEADER_FLAG -eq 1 ]]; then
+    tail -n +2 $INPUT_DATA_PATH$INPUT_DATA_FILE > $TEMP_INPUT_DATA
+elif [[ $HEADER_FLAG -eq 0 ]]; then
+    cat $INPUT_DATA_PATH$INPUT_DATA_FILE > $TEMP_INPUT_DATA
+else
+    echo 'HEADER_FLAGは０または１）'
+    exit 255
+fi
 
-    # # awk用パターンファイルから指定された項目を出力する。
-    # pattern=$(<./tempCsvPattern3.csv)
-    # awk 'BEGIN{ FS=","; OFS=","; } { print '$pattern'; }' $inputDataFile
-    # # 失敗コード : awk -v ptn=$pattern 'BEGIN{ FS=","; OFS=","; } { print ptn; }' $inputDataFile
 
-    # # ゴミデータ削除
-    # rm ./tempCsvPattern.csv ./tempCsvPattern2.csv ./tempCsvPattern3.csv
+# csvファイルは4番目の行の値を利用する
+tail -n 1 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' > $TEMP_OUTPUTPATTERN
+# txtファイルは3番目の行の値を利用する
+tail -n 2 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' | sed '2d' > $TEMP_LENGTHPATTERN
 
-# elif [[ $inputFileExt == 'txt' ]]; then
-#     # 拡張子がtxtの場合
 
-#     length=$(awk 'BEGIN{ FS=","; OFS=","; } { if(NR == 3){ print $0 } }' $patternFile |sed 's/\([^,]*\),\(.*\)/\2/')
-#     compare=$(awk 'BEGIN{ FS=","; OFS=","; } { if(NR == 4){ print $0 } }' $patternFile |sed 's/\([^,]*\),\(.*\)/\2/')
 
-#     lengthArr=( )
-#     compareArr=( )
+COUNT=0
+IS_REMAINED=TRUE
 
-#     count=0
-#     isRemained=TRUE
+touch $TEMP_OUTPUTPATTERN2
+touch $TEMP_OUTPUTPATTERN_TXT
 
-#     while $isRemained
-#     do
-#         count=$(( $count + 1 ))
-#         var=$(echo $length | cut -f $count -d ',') 
-#         if [[ $var != '' ]]; then
-#             lengthArr[$count-1]=$var
-#         else
-#             isRemained=FALSE
-#         fi
-#     done
+# awk用パターンファイルを作成する。
+while [ $IS_REMAINED == TRUE ]
+do
+    COUNT=$(( $COUNT + 1 ))
+    #patternファイルでTXTは出力制限項目を、CSVは項目長さを読んで値があれば
+    OUTPUT_ITEM=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
+    if [[ $OUTPUT_ITEM != '' ]]; then
+        #特殊文字排除
+        OUTPUT_ITEM=`echo $OUTPUT_ITEM | sed 's/[^0-9]//g'`
+        #Patternによって'0'は出力制限
+        if [[ $OUTPUT_ITEM != '0' ]]; then
+            echo -n '$'$COUNT',' >> $TEMP_OUTPUTPATTERN2
+        fi
+    else
+        IS_REMAINED=FALSE
+    fi
+done
 
-#     count=0
-#     count_=0
-#     isRemained=TRUE
+COUNT=0
+IS_REMAINED=TRUE
+START=1
+END=0
 
-#     while $isRemained
-#     do
-#         count=$(( $count + 1 ))
-#         var=$(echo $compare | cut -f $count -d ',') 
-#         if [[ $var != '' ]]; then
-#             if [[ $var == '0' ]]; then
-#                 compareArr[$count_]=$count
-#                 count_=$(( $count_ + 1 ))
-#             fi
-#         else
-#             isRemained=FALSE
-#         fi
-#     done
+if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
+    # TXTファイルのcut用パターンファイルを作成する。
+    while [ $IS_REMAINED == TRUE ]
+    do
+        COUNT=$(( $COUNT + 1 ))
+        #patternファイルでTXTは出力制限項目を、CSVは項目長さを読んで値があれば
+        OUTPUT_ITEM=`cat $TEMP_OUTPUTPATTERN | cut -f $COUNT -d ','`
+        #cut用　length計算
+        CUT_LENGTH=`cat $TEMP_LENGTHPATTERN | cut -f $COUNT -d ','`
+        #patternファイルの出力制限項目を読んで値があれば
+        if [[ $OUTPUT_ITEM != '' ]]; then
+            #特殊文字排除
+            CUT_LENGTH=`echo $CUT_LENGTH | sed 's/[^0-9]//g'`
+            #cutするEnd位置計算
+            if [[ $END -eq 0 ]]; then
+                END=$CUT_LENGTH
+            else
+                END=`expr $END + $CUT_LENGTH`
+            fi
+            #cut用patternを作成
+            echo -n  $START'-'$END',' >> $TEMP_OUTPUTPATTERN_TXT
+            #cutするStart位置計算
+            START=`expr $END + 1`
 
-#     count=0
-#     isRemained=TRUE
+        else
+            IS_REMAINED=FALSE
+        fi
+    done
 
-#     touch ./tempTextPattern.csv
+    #最後の','を抜かして出力
+    PATTERN_TXT=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN_TXT`
+    #txtをcsv形式に変換
+    cat $TEMP_INPUT_DATA | cut -c$PATTERN_TXT --output-delimiter=',' > $TEMP_INPUT_DATA_TXT
+    #awkに使うため再購入
+    cat $TEMP_INPUT_DATA_TXT > $TEMP_INPUT_DATA
+fi
 
-#     while read line
-#     do
-#         while $isRemained
-#         do
-#             if [[ ${#lengthArr[@]} -ne $count ]]; then
-#                 if [[ $count -eq 0 ]]; then
-#                     div1=$(echo $line | cut -c 1-${lengthArr[$count]}) 
-#                     div2=$(echo $line | sed 's/\(^'$div1'\)\(.*\)/\2/') 
-#                 else
-#                     div2=$(echo $result | cut -d ',' -f $(expr $count + 1))
-#                     div1=$div1,$(echo $div2 | cut -c 1-${lengthArr[$count]})
-#                     div2=$(echo $div2 | cut -c $(expr ${lengthArr[$count]} + 1)-)
-#                 fi
+#最後の','を抜かして出力
+PATTERN=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN2`
 
-#                 result=$div1","$div2
-#                 echo $result
-#                 echo ""
-#             else
-#                 echo $result |sed 's/\(\,$\)//g' >> ./tempTextPattern.csv
-#                 isRemained=FALSE
-#             fi
+# ソートキーによってsortコマンド用patternを作成
+if [[ -n $SORT_KEY ]]; then
+    SORT_PATTERN=`echo $SORT_KEY |awk 'BEGIN{ FS=","; } { for (i=1; i<=NF; i++) printf "-k "$i","$i" "; }'`
+    # 入力データを変換し、出力ファイルを作成する。
+    sort $SORT_PATTERN -t ',' $TEMP_INPUT_DATA | awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' > $OUTPUT_DATA_FILE
+else
+    # 入力データを変換し、出力ファイルを作成する。
+    awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
+fi
 
-#             count=$(( $count + 1 ))
-#         done
-#         count=0
-#         isRemained=TRUE
-#     done < $2
 
-#     ##############################
-#     #### 未作成部分              ####
-#     #### csvコンバート作業とほぼ同じ ####
-#     ##############################
-
-#     rm ./tempTextPattern.csv
-# else
-#     # 拡張子が正しくない場合
-#     echo '拡張子がtxtやcsvではない。'
-#     exit 255
+# 仮ファイル削除(出力パータンファイル)
+if [[ -f "$TEMP_LENGTHPATTERN" ]]; then
+    rm $TEMP_LENGTHPATTERN
+fi
+if [[ -f "$TEMP_OUTPUTPATTERN" ]]; then
+    rm $TEMP_OUTPUTPATTERN
+fi
+if [[ -f "$TEMP_OUTPUTPATTERN2" ]]; then
+    rm $TEMP_OUTPUTPATTERN2
+fi
+if [[ -f "$TEMP_OUTPUTPATTERN_TXT" ]]; then
+    rm $TEMP_OUTPUTPATTERN_TXT
+fi
+if [[ -f "$TEMP_INPUT_DATA" ]]; then
+    rm $TEMP_INPUT_DATA
+fi
+if [[ -f "$TEMP_INPUT_DATA_TXT" ]]; then
+    rm $TEMP_INPUT_DATA_TXT
 fi
 
 # 正常終了
