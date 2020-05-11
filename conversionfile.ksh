@@ -35,7 +35,8 @@ else
     exit 255
 fi
 
-
+# パターンファイルパス
+PATTERN_PATH='./pattern/'
 # 入力ファイル名（拡張子抜き）
 INPUT_FILE_NAME=${INPUT_DATA_FILE%.*}
 # 入力ファイルの拡張子（ファイル名抜き）
@@ -43,8 +44,6 @@ INPUT_FILE_EXT=${INPUT_DATA_FILE#*.}
 
 # 出力ファイルフルパス
 OUTPUT_DATA_FILE=$OUTPUT_DATA_PATH$INPUT_DATA_FILE
-# パターンファイルパス
-PATTERN_PATH='./pattern/'
 # パターンファイル名
 PATTERN_FILE=$PATTERN_PATH$INPUT_FILE_NAME'.csv'
 
@@ -67,9 +66,10 @@ else
 fi
 
 
-# csvファイルは4番目の行の値を利用する
+# 4番目の行で除外する項目のパラメータを得る
 tail -n 1 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' > $TEMP_OUTPUTPATTERN
-# txtファイルは3番目の行の値を利用する
+
+# txtファイルのため3番目の行で項目の長さを得る
 tail -n 2 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' | sed '2d' > $TEMP_LENGTHPATTERN
 
 
@@ -80,7 +80,7 @@ IS_REMAINED=TRUE
 touch $TEMP_OUTPUTPATTERN2
 touch $TEMP_OUTPUTPATTERN_TXT
 
-# awk用パターンファイルを作成する。
+# 除外する項目パタン（$TEMP_OUTPUTPATTERN）から出力項目（'1'）だけ得る
 while [ $IS_REMAINED == TRUE ]
 do
     COUNT=$(( $COUNT + 1 ))
@@ -103,6 +103,7 @@ IS_REMAINED=TRUE
 START=1
 END=0
 
+# TXTファイルをCSV形式に変換するためcut構文を作る
 if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
     # TXTファイルのcut用パターンファイルを作成する。
     while [ $IS_REMAINED == TRUE ]
@@ -134,10 +135,14 @@ if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
 
     #最後の','を抜かして出力
     PATTERN_TXT=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN_TXT`
-    #txtをcsv形式に変換
+    #txtをcsv形式に変換（項目ごとに','を入れる）
     cat $TEMP_INPUT_DATA | cut -c$PATTERN_TXT --output-delimiter=',' > $TEMP_INPUT_DATA_TXT
+    echo '1'
+    cat TEMP_INPUT_DATA_TXT
     #awkに使うため再購入
     cat $TEMP_INPUT_DATA_TXT > $TEMP_INPUT_DATA
+    echo '2'
+    cat TEMP_INPUT_DATA
 fi
 
 #最後の','を抜かして出力
