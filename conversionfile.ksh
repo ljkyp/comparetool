@@ -1,8 +1,12 @@
 #!/bin/ksh
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 0 1     #header なし ソートキー なし
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1     #header あり ソートキー なし
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1 2,4 #header あり ソートキー あり
-#ksh ./conversionfile.ksh ./newdata/ datacsv11.csv 0 1
+#****************************************************************************#
+# 概要：比較用ファイルコンバージョン処理                                        #
+# ファイル名：conversionfile.ksh                                              #
+# 作成日：2020/05/11                                                         #
+# 作成者：田                                                                 #
+# 入力：ヘッダーFlg: 1:あり 0:なし 現新Flg: 0:現行 1:新行　                    #
+#      ソートキ: カラムの位置を数字で入力                                      #
+#****************************************************************************#
 
 if [[ $# -ne 4 && $# -ne 5 ]]; then
     echo '引数は4個または5個必要（現：'$#'個）'
