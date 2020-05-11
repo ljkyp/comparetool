@@ -1,8 +1,8 @@
 #!/bin/sh
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 0 1     #header なし ソートキー なし
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1     #header あり ソートキー なし
-#ksh ./conversionfile.ksh ./newdata/ datatxt11.txt 1 1 2,4 #header あり ソートキー あり
-#ksh ./conversionfile.ksh ./newdata/ datacsv11.csv 0 1
+#ksh ./test.sh ./newdata/ datatxt1.txt 0 1     #header なし ソートキー なし
+#ksh ./test.sh ./newdata/ datatxt1.txt 1 1     #header あり ソートキー なし
+#ksh ./test.sh ./newdata/ datatxt1.txt 1 1 2,4 #header あり ソートキー あり
+#ksh ./test.sh ./newdata/ datacsv1.csv 0 1
 
 if [[ $# -ne 4 && $# -ne 5 ]]; then
     echo '引数は4個または5個必要（現：'$#'個）'
@@ -31,7 +31,8 @@ else
     exit 255
 fi
 
-
+# パターンファイルパス
+PATTERN_PATH='./pattern/'
 # 入力ファイル名（拡張子抜き）
 INPUT_FILE_NAME=${INPUT_DATA_FILE%.*}
 # 入力ファイルの拡張子（ファイル名抜き）
@@ -39,8 +40,6 @@ INPUT_FILE_EXT=${INPUT_DATA_FILE#*.}
 
 # 出力ファイルフルパス
 OUTPUT_DATA_FILE=$OUTPUT_DATA_PATH$INPUT_DATA_FILE
-# パターンファイルパス
-PATTERN_PATH='./pattern/'
 # パターンファイル名
 PATTERN_FILE=$PATTERN_PATH$INPUT_FILE_NAME'.csv'
 
@@ -63,9 +62,10 @@ else
 fi
 
 
-# csvファイルは4番目の行の値を利用する
+# 4番目の行で除外する項目のパラメータを得る
 tail -n 1 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' > $TEMP_OUTPUTPATTERN
-# txtファイルは3番目の行の値を利用する
+
+# txtファイルのため3番目の行で項目の長さを得る
 tail -n 2 $PATTERN_FILE |sed 's/\([^,]*\),\(.*\)/\2/' | sed '2d' > $TEMP_LENGTHPATTERN
 
 
@@ -76,7 +76,7 @@ IS_REMAINED=TRUE
 touch $TEMP_OUTPUTPATTERN2
 touch $TEMP_OUTPUTPATTERN_TXT
 
-# awk用パターンファイルを作成する。
+# 出力制限パータン（$TEMP_OUTPUTPATTERN）から出力項目（'1'）だけ得る
 while [ $IS_REMAINED == TRUE ]
 do
     COUNT=$(( $COUNT + 1 ))
@@ -99,6 +99,7 @@ IS_REMAINED=TRUE
 START=1
 END=0
 
+# TXTファイルをCSV形式に変換するためcut構文を作るとtxtをcsvに返還処理
 if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
     # TXTファイルのcut用パターンファイルを作成する。
     while [ $IS_REMAINED == TRUE ]
@@ -128,18 +129,18 @@ if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
         fi
     done
 
-    #最後の','を抜かして出力
+    # txt長さ別のパータンで最後の','を抜かして出力
     PATTERN_TXT=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN_TXT`
-    #txtをcsv形式に変換
+    #txtをcsv形式に変換してTEMPファイルに保管（項目ごとに','を入れる）
     cat $TEMP_INPUT_DATA | cut -c$PATTERN_TXT --output-delimiter=',' > $TEMP_INPUT_DATA_TXT
-    #awkに使うため再購入
+    #TEMPに保管したファイルをawkで使うファイルに変換
     cat $TEMP_INPUT_DATA_TXT > $TEMP_INPUT_DATA
 fi
 
-#最後の','を抜かして出力
+# 出力制限パータンで最後の','を抜かして出力
 PATTERN=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN2`
 
-# ソートキーによってsortコマンド用patternを作成
+# ソートキーによってsort用patternを作成
 if [[ -n $SORT_KEY ]]; then
     SORT_PATTERN=`echo $SORT_KEY |awk 'BEGIN{ FS=","; } { for (i=1; i<=NF; i++) printf "-k "$i","$i" "; }'`
     # 入力データを変換し、出力ファイルを作成する。
@@ -148,7 +149,6 @@ else
     # 入力データを変換し、出力ファイルを作成する。
     awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
 fi
-
 
 # 仮ファイル削除(出力パータンファイル)
 if [[ -f "$TEMP_LENGTHPATTERN" ]]; then
@@ -169,6 +169,8 @@ fi
 if [[ -f "$TEMP_INPUT_DATA_TXT" ]]; then
     rm $TEMP_INPUT_DATA_TXT
 fi
+
+cat $OUTPUT_DATA_FILE
 
 # 正常終了
 exit 0

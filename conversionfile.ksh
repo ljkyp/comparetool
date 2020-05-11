@@ -4,8 +4,9 @@
 # ファイル名：conversionfile.ksh                                              #
 # 作成日：2020/05/11                                                         #
 # 作成者：田                                                                 #
-# 入力：ヘッダーFlg: 1:あり 0:なし 現新Flg: 0:現行 1:新行　                    #
-#      ソートキ: カラムの位置を数字で入力                                      #
+# 入力：ヘッダーFlg: 1:あり 0:なし 現新Flg: 0:現行 1:新行　                     #
+# ksh ./conversion.ksh ./newdata/ datatxt1.txt 0 1     #header なし ソートキー なし  #
+# ksh ./conversion.ksh ./newdata/ datatxt1.txt 1 1 2,4 #header あり ソートキー あり  #
 #****************************************************************************#
 
 if [[ $# -ne 4 && $# -ne 5 ]]; then
@@ -80,7 +81,7 @@ IS_REMAINED=TRUE
 touch $TEMP_OUTPUTPATTERN2
 touch $TEMP_OUTPUTPATTERN_TXT
 
-# 除外する項目パタン（$TEMP_OUTPUTPATTERN）から出力項目（'1'）だけ得る
+# 出力制限パータン（$TEMP_OUTPUTPATTERN）から出力項目（'1'）だけ得る
 while [ $IS_REMAINED == TRUE ]
 do
     COUNT=$(( $COUNT + 1 ))
@@ -103,7 +104,7 @@ IS_REMAINED=TRUE
 START=1
 END=0
 
-# TXTファイルをCSV形式に変換するためcut構文を作る
+# TXTファイルをCSV形式に変換するためcut構文を作るとtxtをcsvに返還処理
 if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
     # TXTファイルのcut用パターンファイルを作成する。
     while [ $IS_REMAINED == TRUE ]
@@ -133,18 +134,18 @@ if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
         fi
     done
 
-    #最後の','を抜かして出力
+    # txt長さ別のパータンで最後の','を抜かして出力
     PATTERN_TXT=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN_TXT`
-    #txtをcsv形式に変換（項目ごとに','を入れる）
+    #txtをcsv形式に変換してTEMPファイルに保管（項目ごとに','を入れる）
     cat $TEMP_INPUT_DATA | cut -c$PATTERN_TXT --output-delimiter=',' > $TEMP_INPUT_DATA_TXT
-    #awkに使うため再購入
+    #TEMPに保管したファイルをawkで使うファイルに変換
     cat $TEMP_INPUT_DATA_TXT > $TEMP_INPUT_DATA
 fi
 
-#最後の','を抜かして出力
+# 出力制限パータンで最後の','を抜かして出力
 PATTERN=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN2`
 
-# ソートキーによってsortコマンド用patternを作成
+# ソートキーによってsort用patternを作成
 if [[ -n $SORT_KEY ]]; then
     SORT_PATTERN=`echo $SORT_KEY |awk 'BEGIN{ FS=","; } { for (i=1; i<=NF; i++) printf "-k "$i","$i" "; }'`
     # 入力データを変換し、出力ファイルを作成する。
@@ -153,7 +154,6 @@ else
     # 入力データを変換し、出力ファイルを作成する。
     awk 'BEGIN{ FS=","; OFS=","; } { print '$PATTERN'; }' $TEMP_INPUT_DATA > $OUTPUT_DATA_FILE
 fi
-
 
 # 仮ファイル削除(出力パータンファイル)
 if [[ -f "$TEMP_LENGTHPATTERN" ]]; then
