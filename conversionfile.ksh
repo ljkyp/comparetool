@@ -137,12 +137,8 @@ if [[ $INPUT_FILE_EXT == 'txt' || $INPUT_FILE_EXT == 'TXT' ]]; then
     PATTERN_TXT=`sed 's/\(\,$\)//g' $TEMP_OUTPUTPATTERN_TXT`
     #txtをcsv形式に変換（項目ごとに','を入れる）
     cat $TEMP_INPUT_DATA | cut -c$PATTERN_TXT --output-delimiter=',' > $TEMP_INPUT_DATA_TXT
-    echo '1'
-    cat TEMP_INPUT_DATA_TXT
     #awkに使うため再購入
     cat $TEMP_INPUT_DATA_TXT > $TEMP_INPUT_DATA
-    echo '2'
-    cat TEMP_INPUT_DATA
 fi
 
 #最後の','を抜かして出力
